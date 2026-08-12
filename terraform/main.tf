@@ -79,7 +79,7 @@ resource "azurerm_linux_virtual_machine" "vm_test" {
   name                = "${var.project_name}-vm-test"
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
-  size                = "Standard_B1s"  # petite taille, économe
+  size                = "Standard_B2s_v2"  # petite taille, économe
   admin_username      = var.admin_username
 
   network_interface_ids = [
