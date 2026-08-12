@@ -4,3 +4,5 @@
 *.tfvars
 .env
 crash.log
+venv/
+reports/*.json
