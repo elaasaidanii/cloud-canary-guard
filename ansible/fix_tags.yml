@@ -1,0 +1,36 @@
+---
+- name: Cloud Canary Guard - Correction des tags manquants
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    resource_group: "canaryguard-rg"
+    vm_name: "canaryguard-vm-test"
+    default_owner: "elaa"
+    default_environment: "test"
+
+  tasks:
+    - name: Ajouter les tags manquants sur le Resource Group
+      command: >
+        az group update
+        --name {{ resource_group }}
+        --tags project=canaryguard owner={{ default_owner }} environment={{ default_environment }}
+      register: rg_tags_result
+
+    - name: Confirmer les tags du Resource Group
+      debug:
+        msg: "✅ Tags appliqués sur le Resource Group '{{ resource_group }}'"
+
+    - name: Ajouter les tags manquants sur la VM
+      command: >
+        az resource update
+        --resource-group {{ resource_group }}
+        --name {{ vm_name }}
+        --resource-type "Microsoft.Compute/virtualMachines"
+        --set tags.owner={{ default_owner }} tags.environment={{ default_environment }}
+      register: vm_tags_result
+
+    - name: Confirmer les tags de la VM
+      debug:
+        msg: "✅ Tags appliqués sur la VM '{{ vm_name }}'"
