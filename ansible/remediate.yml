@@ -1,0 +1,44 @@
+---
+- name: Cloud Canary Guard - Remédiation automatique
+  hosts: non_compliant
+  become: true
+  gather_facts: true
+
+  vars_files:
+    - group_vars/all.yml
+
+  tasks:
+    - name: Afficher les non-conformités détectées pour cette VM
+      debug:
+        msg:
+          - "VM: {{ inventory_hostname }}"
+          - "Tags manquants: {{ vms_missing_tags[inventory_hostname] | default([]) }}"
+          - "Alerte coût: {{ vms_cost_alerts[inventory_hostname] | default('aucune') }} USD/mois"
+
+    - name: Créer un fichier de log de remédiation sur la VM
+      copy:
+        content: |
+          === Cloud Canary Guard - Log de remédiation ===
+          Date du scan : {{ scan_date }}
+          VM : {{ inventory_hostname }}
+          Tags manquants détectés : {{ vms_missing_tags[inventory_hostname] | default([]) }}
+          Alerte coût : {{ vms_cost_alerts[inventory_hostname] | default('aucune') }} USD/mois
+          Problèmes réseau : {{ network_issues }}
+        dest: /home/azureadmin/canary_guard_remediation.log
+      become: false
+
+    - name: Installer fail2ban pour renforcer la sécurité SSH
+      apt:
+        name: fail2ban
+        state: present
+        update_cache: true
+
+    - name: S'assurer que fail2ban est actif et démarré
+      systemd:
+        name: fail2ban
+        enabled: true
+        state: started
+
+    - name: Notifier - Afficher résumé final
+      debug:
+        msg: "✅ Remédiation appliquée sur {{ inventory_hostname }}."

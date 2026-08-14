@@ -1,5 +1,5 @@
 ---
-scan_date: "2026-08-12T20:58:53.695482Z"
+scan_date: "2026-08-14T19:24:34.286402Z"
 network_issues: [{"nsg_name": "canaryguard-nsg", "rule_name": "SSH", "port": "22", "source": "*", "severity": "high"}]
 vms_missing_tags: {"canaryguard-vm-test": ["owner", "environment"]}
 vms_cost_alerts: {"canaryguard-vm-test": 31.0}
