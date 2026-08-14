@@ -1,0 +1,34 @@
+---
+- name: Cloud Canary Guard - Correction de la règle NSG SSH
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    resource_group: "canaryguard-rg"
+    nsg_name: "canaryguard-nsg"
+    rule_name: "SSH"
+
+  tasks:
+    - name: Récupérer l'IP publique actuelle du poste de contrôle
+      uri:
+        url: https://api.ipify.org?format=text
+        return_content: true
+      register: my_ip
+
+    - name: Afficher l'IP qui sera autorisée
+      debug:
+        msg: "Restriction du SSH à l'IP : {{ my_ip.content | trim }}"
+
+    - name: Mettre à jour la règle NSG - restreindre la source SSH
+      command: >
+        az network nsg rule update
+        --resource-group {{ resource_group }}
+        --nsg-name {{ nsg_name }}
+        --name {{ rule_name }}
+        --source-address-prefixes {{ my_ip.content | trim }}
+      register: nsg_update
+
+    - name: Confirmer la mise à jour
+      debug:
+        msg: "✅ Règle NSG '{{ rule_name }}' restreinte à {{ my_ip.content | trim }} (au lieu de '*')"
