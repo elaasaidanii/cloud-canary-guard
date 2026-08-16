@@ -195,21 +195,37 @@ def generate_ansible_inventory(report, vm_public_ip, admin_user="azureadmin"):
 
 
 def trigger_ansible():
-    """Déclenche ansible-playbook si le playbook existe."""
+    """Déclenche ansible-playbook si le playbook existe, avec gestion d'erreurs claire."""
     playbook_path = "ansible/remediate.yml"
     if not os.path.exists(playbook_path):
         print("⚠ Playbook Ansible non trouvé (ansible/remediate.yml) — étape à venir.")
         return
+
     print("Déclenchement d'Ansible pour remédiation automatique...")
     result = subprocess.run(
         ["ansible-playbook", "-i", "ansible/inventory/hosts.ini", playbook_path],
         capture_output=True, text=True
     )
     print(result.stdout)
-    if result.returncode != 0:
-        print("Erreur Ansible:", result.stderr)
 
+    if result.returncode == 0:
+        print("✅ Remédiation Ansible appliquée avec succès.")
+        return
 
+    # --- Analyse du type d'échec pour un message clair ---
+    output = result.stdout + result.stderr
+
+    if "UNREACHABLE" in output or "Connection timed out" in output:
+        print("⚠️  VM injoignable en SSH — remédiation interne (fail2ban, logs) impossible.")
+        print("    → Vérifiez que la VM est allumée : az vm start --resource-group <RG> --name <VM>")
+        print("    → Les corrections via Azure CLI (tags, règles réseau) restent possibles indépendamment du SSH.")
+    elif "Permission denied" in output:
+        print("⚠️  Échec d'authentification SSH — vérifiez la clé publique / l'utilisateur configuré.")
+    else:
+        print("⚠️  Échec Ansible pour une raison non identifiée :")
+        print(result.stderr.strip() if result.stderr.strip() else "(aucun détail stderr disponible)")
+
+    print("    → Le scan et le rapport restent valides ; seule la remédiation automatique a été impactée.")
 def main():
     vm_public_ip = os.environ.get("VM_PUBLIC_IP", "4.223.129.11")
 
